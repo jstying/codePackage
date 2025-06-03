@@ -2,7 +2,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader, random_split
 import torch.nn as nn
-
+import os
 import sys
 
 
@@ -71,10 +71,23 @@ class EnergyPredictor(nn.Module):
 
 
 def main():
-   # demoData.csv
-   fname = input("请输入CSV文件名: ").strip()
+   # C:\Users\yingj\PycharmProjects\pytorchLearn\demoData.csv
+   # 获取用户输入的CSV文件路径
+   file_path = input("请输入CSV文件路径: ").strip()
+
+   # 检查文件是否存在
+   if not os.path.exists(file_path):
+       print(f"错误：文件 '{file_path}' 不存在！")
+       return
+
+   # 检查是否为CSV文件
+   if not file_path.lower().endswith('.csv'):
+       print(f"错误：'{file_path}' 不是CSV文件！")
+       return
+
+   #读取
    try:
-      dataset = readCSV(fname)
+      dataset = readCSV(file_path)
       train_dataset, val_dataset = split_dataset(dataset)
       train_loader, val_loader = create_dataloaders(train_dataset, val_dataset)
    except FileNotFoundError as e:
