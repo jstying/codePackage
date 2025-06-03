@@ -45,10 +45,10 @@ def generate_realistic_energy_data(n_samples):
 
 
 # 生成数据并保存
-data = generate_realistic_energy_data(50)
+data = generate_realistic_energy_data(160)
 df = pd.DataFrame(data)
-df.to_csv("demo_energy_data.csv", index=False)
-print("生成50条更真实的演示数据，字段：temperature, hour, is_weekend, energy")
+df.to_csv("demoData.csv", index=False)
+print("生成160条更真实的演示数据，字段：temperature, hour, is_weekend, energy")
 
 # 打印数据样本预览
 print("\n数据样本预览：")
