@@ -1,0 +1,54 @@
+<!-- templates/upload.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSV文件上传与分析</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .result { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>上传能源预测CSV数据</h1>
+    <form method="post" enctype="multipart/form-data">
+        <!--文件选择按钮-->
+        <input type="file" name="file" accept=".csv">
+        <!--提交按钮-->
+        <input type="submit" value="上传并分析">
+    </form>
+    <!--初始隐藏，数据有了才显示-->
+    <div id="result" class="result" style="display: none;"></div>
+
+    <script> //无刷新表单提交（AJAX 提交
+        // 选择表单元素并绑定提交事件
+        document.querySelector('form').addEventListener('submit', function(e) {
+            // 阻止浏览器自动刷新页面并跳转
+            e.preventDefault();
+            const formData = new FormData(this);
+            const resultDiv = document.getElementById('result');
+
+            fetch('/', { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        resultDiv.innerHTML = `
+                            <h3>分析结果</h3>
+                            <p>总样本数: ${data.total_samples}</p>
+                            <p>训练集样本数: ${data.train_samples}</p>
+                            <p>验证集样本数: ${data.val_samples}</p>
+                            <p>输入特征数: ${data.input_features}</p>
+                            <p>模型已初始化，可进行训练</p>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `<p style="color: red;">错误: ${data.error}</p>`;
+                    }
+                    resultDiv.style.display = 'block';
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `<p style="color: red;">网络错误: ${error.message}</p>`;
+                    resultDiv.style.display = 'block';
+                });
+        });
+    </script>
+</body>
+</html>
