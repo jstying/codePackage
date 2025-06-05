@@ -1,0 +1,95 @@
+<!-- templates/upload.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CSV 数据导入工具</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .result { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>CSV 数据导入工具</h1>
+    <form method="post" enctype="multipart/form-data">
+        <!-- 新增sql password输入框 -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">sql密码</label>
+            <div class="mt-1">
+                <input type="password" name="sql_pwd" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+            </div>
+        </div>
+
+        <!-- 新增空行间隔 -->
+        <div style="height: 10px;"></div>
+
+        <!-- 新增数据库名称输入框 -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">数据库名称</label>
+            <div class="mt-1">
+                <input type="text" name="db_name" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+            </div>
+        </div>
+
+        <!-- 新增空行间隔 -->
+        <div style="height: 10px;"></div> <!-- 高度可调整 -->
+
+         <!-- 新增表名称输入框 -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">表名称</label>
+            <div class="mt-1">
+                <input type="text" name="tb_name"  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+            </div>
+        </div>
+
+        <!-- 新增空行间隔 -->
+        <div style="height: 30px;"></div> <!-- 高度可调整 -->
+
+        <!--文件选择按钮-->
+        <input type="file" name="file" accept=".csv">
+        <!--提交按钮-->
+        <input type="submit" value="上传">
+    </form>
+
+
+
+    <!--初始隐藏，数据有了才显示-->
+    <div id="result" class="result" style="display: none;"></div>
+
+
+    <script> //无刷新表单提交（AJAX 提交
+        // 选择form元素并绑定submit事件
+        document.querySelector('form').addEventListener('submit', function(e) {
+            // 阻止浏览器自动刷新页面并跳转
+            e.preventDefault();
+            const formData = new FormData(this); // 表单数据
+            // 获取用于显示结果的  <div id="result" 元素
+            const resultDiv = document.getElementById('result');
+
+            fetch('/', { method: 'POST', body: formData })
+                // 处理json解析，后端返回的
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // js中设置html元素内容
+                        resultDiv.innerHTML = `
+                            <h3 style="color: green;">上传成功！</h3>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `<p style="color: red;">错误: ${data.error}</p>`;
+                    }
+                    resultDiv.style.display = 'block'; // display 样式
+                    setTimeout(() => {
+                        resultDiv.style.display = 'none'; // 隐藏元素
+                    }, 3000); // 3000 毫秒 = 3 秒
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `<p style="color: red;">网络错误: ${error.message}</p>`;
+                    resultDiv.style.display = 'block';
+                     setTimeout(() => {
+                        resultDiv.style.display = 'none'; // 隐藏元素
+                    }, 3000); // 3000 毫秒 = 3 秒
+                });
+        });
+    </script>
+</body>
+</html>
