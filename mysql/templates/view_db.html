@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>数据库列表查看</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .result { margin-top: 20px; padding: 15px; background-color: #f0f0f0; border-radius: 5px; }
+        .search-container {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .db-item {
+            margin: 8px 0;
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+        .db-item.hidden {
+            display: none;
+        }
+        .db-item:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <h1>数据库列表查看</h1>
+
+    <!-- 搜索输入框 -->
+    <div class="search-container">
+        <input type="text" id="searchInput" class="search-input" placeholder="搜索数据库名称...">
+    </div>
+
+    <!-- 功能按钮 -->
+    <div style="height: 10px;"></div>
+    <button id="fetch-dbs" class="btn">重新获取数据库列表</button>
+
+    <div style="height: 10px;"></div>
+    <div class="nav-buttons">
+        <a href="/" class="btn">去登录</a>
+        <a href="/upload" class="btn">去上传</a>
+        <a href="/delete_db" class="btn">去删除数据库</a>
+        <a href="/delete_tb" class="btn">去删除表</a>
+        <a href="/view_tb" class="btn">去查看表</a>
+        <a href="/download-csv" class="btn btn-danger">去下载表格</a>
+    </div>
+
+    <!-- 结果展示区域 -->
+    <div id="result" class="result" style="display: block;"> <!-- 初始显示 -->
+        <h3>数据库列表</h3>
+        <ul id="db-list" class="db-list"></ul>
+        <p id="empty-list" style="display: none;">没有找到任何数据库</p>
+        <p id="error-message" class="error" style="display: none;"></p>
+    </div>
+
+    <script>
+        // 全局变量存储原始数据
+        let originalDatabases = [];
+
+        // 初始化函数：获取数据并绑定事件
+        async function init() {
+            await fetchDatabases();
+            bindSearchEvent();
+        }
+
+        // 获取数据库列表
+        async function fetchDatabases() {
+            const resultDiv = document.getElementById('result');
+            const errorMessage = document.getElementById('error-message');
+            const dbList = document.getElementById('db-list');
+
+            try {
+                errorMessage.style.display = 'none';
+                dbList.innerHTML = ''; // 清空旧数据
+
+                const response = await fetch('/view_db', { method: 'POST' });
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                originalDatabases = data.databases || [];
+                renderDatabases(originalDatabases);
+
+                if (originalDatabases.length === 0) {
+                    document.getElementById('empty-list').style.display = 'block';
+                } else {
+                    document.getElementById('empty-list').style.display = 'none';
+                }
+
+            } catch (error) {
+                errorMessage.textContent = `错误: ${error.message || '获取数据失败'}`;
+                errorMessage.style.display = 'block';
+                originalDatabases = [];
+            }
+        }
+
+        // 渲染数据库列表
+        function renderDatabases(databases) {
+            const dbList = document.getElementById('db-list');
+            dbList.innerHTML = databases.map(db =>
+                `<li class="db-item">${db}</li>`
+            ).join('');
+        }
+
+        // 绑定搜索事件
+        function bindSearchEvent() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('input', function() {
+                const keyword = this.value.trim().toLowerCase();
+                const filteredDatabases = originalDatabases.filter(db =>
+                    db.toLowerCase().includes(keyword)
+                );
+                renderDatabases(filteredDatabases);
+
+                // 处理空结果
+                if (filteredDatabases.length === 0 && keyword !== '') {
+                    document.getElementById('empty-list').textContent = '没有找到匹配的数据库';
+                    document.getElementById('empty-list').style.display = 'block';
+                } else {
+                    document.getElementById('empty-list').style.display = 'none';
+                }
+            });
+        }
+
+        // 初始化页面
+        init();
+
+        // 重新获取数据按钮事件
+        document.getElementById('fetch-dbs').addEventListener('click', fetchDatabases);
+    </script>
+</body>
+</html>

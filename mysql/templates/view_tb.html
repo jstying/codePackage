@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>表格列表查看</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .search-box {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 8px 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .tb-item {
+            margin: 8px 0;
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: white;
+            transition: all 0.3s ease;
+        }
+        .tb-item.hidden {
+            display: none;
+        }
+        .tb-item:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <h1>表格列表查看</h1>
+
+    <!-- 数据库名称查询表单 -->
+    <div class="form-group">
+        <label class="block text-sm font-medium text-gray-700">数据库名称</label>
+        <div class="mt-1">
+            <input type="text"
+                   name="db_name"
+                   id="db_name"
+                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400"
+            >
+        </div>
+
+        <!-- 新增空行间隔 -->
+        <div style="height: 30px;"></div>
+
+        <button type="button" class="btn mt-2" onclick="fetchTables()">获取表格列表</button>
+    </div>
+
+
+
+    <!-- 表格名称实时搜索框 -->
+    <div class="search-box">
+        <input type="text"
+               id="tbSearchInput"
+               class="search-input"
+               placeholder="搜索表格名称..."
+               oninput="filterTables()"
+        >
+    </div>
+
+    <div class="nav-buttons">
+        <a href="/" class="btn">去登录</a>
+        <a href="/upload" class="btn">去上传</a>
+        <a href="/delete_db" class="btn">去删除数据库</a>
+        <a href="/delete_tb" class="btn">去删除表</a>
+        <a href="/view_db" class="btn">去查看数据库</a>
+        <a href="/download-csv" class="btn btn-danger">去下载表格</a>
+    </div>
+
+    <div id="result" class="result" style="display: none;">
+        <h3>表格列表</h3>
+        <ul id="tb-list" class="tb-list"></ul>
+        <p id="empty-list" style="display: none;">没有找到任何表格</p>
+        <p id="error-message" class="error" style="display: none;"></p>
+    </div>
+
+    <script>
+        let originalTables = []; // 存储原始表格数据
+        let currentDbName = ''; // 当前数据库名称
+
+        function fetchTables() {
+            const dbName = document.getElementById('db_name').value.trim();
+            const resultDiv = document.getElementById('result');
+            const errorMessage = document.getElementById('error-message');
+
+            if (!dbName) {
+                errorMessage.textContent = "请输入数据库名称";
+                errorMessage.style.display = 'block';
+                resultDiv.style.display = 'block';
+                originalTables = [];
+                renderTables([]);
+                return;
+            }
+
+            currentDbName = dbName;
+            errorMessage.style.display = 'none';
+            resultDiv.style.display = 'block';
+
+            // 模拟后端请求（需替换为实际接口）
+            // 这里假设返回数据格式为 { tables: ['table1', 'table2', ...] }
+            const mockData = {
+                tables: ['user_info', 'order_records', 'product_catalog', 'system_logs']
+            };
+
+            originalTables = mockData.tables || [];
+            renderTables(originalTables); // 渲染原始数据
+            document.getElementById('empty-list').style.display = originalTables.length === 0 ? 'block' : 'none';
+        }
+
+        function renderTables(tables) {
+            const tbList = document.getElementById('tb-list');
+            tbList.innerHTML = tables.map(tb =>
+                `<li class="tb-item" data-table="${tb}">${tb}</li>`
+            ).join('');
+        }
+
+        function filterTables() {
+            const keyword = document.getElementById('tbSearchInput').value.trim().toLowerCase();
+            const tbItems = document.querySelectorAll('.tb-item');
+
+            if (!originalTables.length) return; // 无数据时不处理
+
+            tbItems.forEach(item => {
+                const tableName = item.textContent.toLowerCase();
+                const isMatch = tableName.includes(keyword);
+                item.classList.toggle('hidden', !isMatch);
+            });
+
+            // 更新空数据提示
+            const visibleItems = [...tbItems].filter(item => !item.classList.contains('hidden'));
+            document.getElementById('empty-list').style.display = visibleItems.length === 0 ? 'block' : 'none';
+        }
+
+        // 初始化时隐藏搜索框（可选）
+        document.getElementById('tbSearchInput').addEventListener('input', filterTables);
+    </script>
+</body>
+</html>
