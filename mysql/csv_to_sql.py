@@ -8,6 +8,7 @@ import mysql.connector
 from mysql.connector import Error  #与 MySQL 数据库交互过程出现的错误
 from flask import make_response
 import csv
+import pandas as pd
 
 
 class MySQLDatabase:
@@ -277,37 +278,136 @@ class MySQLDatabase:
                 cursor.close()
 
     def list_tb(self, db_name):
-        """获取指定数据库中所有表的列表（可选择排除系统表）"""
+        """获取指定数据库中所有表的列表（排除系统数据库）"""
         if not self.connection or not self.connection.is_connected():
-            print("未连接到数据库服务器")
+            self.logger.error("未连接到数据库服务器")
             return []
+
+        # 定义系统数据库列表
+        SYSTEM_DATABASES = {'sakila', 'world', 'sys', 'information_schema', 'performance_schema', 'mysql'}
+
+        # 安全检查：防止操作系统数据库
+        if db_name.lower() in SYSTEM_DATABASES:
+            raise ValueError(f'拒绝操作系统数据库: {db_name}')
 
         try:
-            cursor = self.connection.cursor()
+            with self.connection.cursor() as cursor:
+                # 查询指定数据库中的所有表
+                query = """
+                        SELECT TABLE_NAME
+                        FROM information_schema.tables
+                        WHERE TABLE_SCHEMA = %s \
+                        """
+                cursor.execute(query, (db_name,))
+                return [row[0] for row in cursor.fetchall()]
 
-            # 安全检查：防止意外删除重要系统表
-            if db_name.lower() in ['sakila', 'world', 'sys', 'information_schema', 'performance_schema', 'mysql']:
-                raise ValueError(f'拒绝展示系统数据库: {db_name}')
-                return []
-
-            # 查询指定数据库中的所有表
-            query = """
-                    SELECT TABLE_NAME
-                    FROM information_schema.tables
-                    WHERE TABLE_SCHEMA = %s \
-                    """
-
-
-
-            cursor.execute(query, (db_name,))
-            return [row[0] for row in cursor.fetchall()]
-        except Error as e:
-            print(f"获取表列表时发生错误: {e}")
+        except self.connection.Error as e:  # 捕获数据库特定异常
+            self.logger.error(f"获取表列表时发生错误: {e}")
             return []
+
+    def show_table(self, db_name, tb_name, limit=1000):
+        """
+        执行 SELECT * FROM db_name.tb_name 查询，返回表数据（带表头）
+        :param db_name: 数据库名称
+        :param tb_name: 表名称
+        :param limit: 限制返回的行数（默认1000行）
+        :return: 包含表头和数据的列表，失败返回 None
+        """
+        if not self.connection or not self.connection.is_connected():
+            print("未连接到数据库服务器")
+            return None
+
+        # 定义系统数据库列表
+        SYSTEM_DATABASES = {'sakila', 'world', 'sys', 'information_schema', 'performance_schema', 'mysql'}
+
+        # 安全检查：拒绝操作系统数据库
+        if db_name.lower() in SYSTEM_DATABASES:
+            print(f"拒绝操作：系统数据库 {db_name} 不可访问")
+            return None
+
+        try:
+            # 切换到目标数据库
+            if not self.use_database(db_name):
+                print(f"无法切换到数据库：{db_name}")
+                return None
+
+            # 构建安全的表名（使用反引号转义，防止 SQL 注入）
+            tb_name_safe = f"`{tb_name}`"
+
+            # 构建查询语句（带 LIMIT 分页）
+            query = f"SELECT * FROM {tb_name_safe} LIMIT {limit}"
+
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+
+            # 获取表头（列名）
+            columns = [column[0] for column in cursor.description]
+
+            # 获取所有数据行
+            rows = cursor.fetchall()
+
+            # 组装结果：[表头, 数据行列表]
+            result = [columns] + [list(row) for row in rows]
+            print(f"成功查询表 {db_name}.{tb_name}，返回 {len(rows)} 条记录")
+            return result
+
+        except self.connection.Error as e:
+            print(f"查询表数据时发生错误：{e}")
+            return None
+
         finally:
             if cursor:
                 cursor.close()
 
+
+import csv
+from decimal import Decimal
+
+
+def parse_csv_structure(csv_path):
+    df = pd.read_csv(csv_path, nrows=100)
+    headers = df.columns.tolist()
+    column_types = []
+
+    for col in df.columns:
+        dtype = df[col].dtype
+        if pd.api.types.is_integer_dtype(dtype):
+            column_types.append("INT")
+        elif pd.api.types.is_float_dtype(dtype):
+            column_types.append("DECIMAL(10,2)")
+        else:
+            column_types.append("VARCHAR(255)")
+
+    return headers, column_types
+
+
+def get_column_definition(headers, types):
+    """
+    根据列名和数据类型生成SQL表定义语句
+
+    Args:
+        headers (list): 列名列表
+        types (list): 数据类型列表
+
+    Returns:
+        str: SQL列定义语句
+    """
+    column_defs = []
+
+    for header, col_type in zip(headers, types):
+        # 处理特殊类型映射
+        if header.startswith('is') and col_type == 'INT':
+            sql_type = 'TINYINT(1)'
+        elif col_type == 'DECIMAL(10,2)':
+            sql_type = 'DECIMAL(5,2)'  # 调整精度为5,2
+        else:
+            sql_type = col_type
+
+        # 添加列定义（带NOT NULL约束）
+        column_defs.append(f"`{header}` {sql_type} NOT NULL")
+
+    # 合并为完整的SQL语句
+    return ",\n".join(column_defs)
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -389,6 +489,7 @@ def upload_file():
             file.save(file_path)
 
             try:
+                headers, column_types = parse_csv_structure(file_path)
                 db_creator = MySQLDatabase(**db_config)
                 # 连接到数据库服务器（未指定具体数据库）
                 if db_creator.connect():
@@ -419,12 +520,10 @@ def upload_file():
 
                             # (5,2) 总位数：5 位（含小数点, 小数位数：2 位
                             # TINYINT(1)仅用于显示宽度
-                            columns_definition = """
-                                `temperature` DECIMAL(5,2) NOT NULL,
-                                `hour` INT NOT NULL,
-                                `is_weekend` TINYINT(1) NOT NULL,
-                                `energy` DECIMAL(5,2) NOT NULL
-                            """
+                            columns_definition = get_column_definition(headers, column_types)
+
+
+
                             db.use_database(db_name)
                             db.create_table(tb_name, columns_definition)
 
@@ -543,6 +642,7 @@ def view_db():
             db_creator = MySQLDatabase(**db_config)
             if db_creator.connect():
                 db_list = db_creator.list_db(True)
+                db_creator.disconnect()
                 return jsonify({"databases": db_list})
             else:
                 raise ValueError("无法连接到SQL服务器")
@@ -553,8 +653,6 @@ def view_db():
     return render_template('view_db.html')
 
 
-
-
 @app.route('/view_tb', methods=['GET', 'POST'])
 def view_tb():
     if request.method == 'POST':
@@ -562,9 +660,12 @@ def view_tb():
             # 创建数据库操作实例
             db_creator = MySQLDatabase(**db_config)
 
-            # 连接到数据库服务器（不指定具体数据库）
-            if db_creator.connect():
-                # 从表单获取要删除的数据库名称
+            try:
+                # 连接到数据库服务器
+                if not db_creator.connect():
+                    raise ValueError("无法连接到SQL服务器")
+
+                # 从表单获取要查看的数据库名称
                 db_name = request.form.get('db_name').strip()
 
                 # 验证数据库名称
@@ -573,25 +674,77 @@ def view_tb():
                 if db_name.isdigit():
                     raise ValueError("数据库名不能为纯数字")
 
+                # 检查数据库是否存在
                 if not db_creator.database_exists(db_name):
-                    print("该数据库不存在")
                     raise ValueError("该数据库不存在")
 
+                # 获取表列表
                 tb_list = db_creator.list_tb(db_name)
-
                 return jsonify({"tables": tb_list})
-            else:
-                raise ValueError("无法连接到SQL服务器")
 
+            finally:
+                db_creator.disconnect()  # 确保关闭数据库连接
+
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            app.logger.error(f"查看表列表失败: {str(e)}")
+            return jsonify({"error": "服务器内部错误，请稍后重试"}), 500
 
-    # 处理GET请求，展示删除数据库的页面
+    # 处理GET请求，展示查看表的页面
     return render_template('view_tb.html')
 
-@app.route('/download_csv', methods=['GET'])
-def download_csv():
-    pass
+
+@app.route('/show_tb', methods=['GET', 'POST'])  # 添加 GET 方法
+def show_table():
+    if request.method == 'GET':
+        # 处理 GET 请求：渲染空表单页面
+        return render_template('show_tb.html')
+
+    elif request.method == 'POST':
+        try:
+            db_name = request.form.get('db_name').strip()
+            tb_name = request.form.get('tb_name').strip()
+
+            # 表单验证：检查必填字段
+            if not db_name or not tb_name:
+                return jsonify({"error": "请填写数据库名和表名"}), 400
+
+            # 创建数据库连接
+            db = MySQLDatabase(**db_config)
+            if not db.connect():
+                return jsonify({"error": "数据库连接失败"}), 500
+
+            # 执行查询
+            table_data = db.show_table(db_name, tb_name)
+            if not table_data:
+                return jsonify({"error": "查询表数据失败：可能表不存在或无权限"}), 400
+
+            # 处理结果：返回前100条数据（避免大数据量）
+            headers = table_data[0]
+            rows = table_data[1:101]  # 限制返回100条，可根据需求调整
+
+            # 返回 JSON 数据给前端
+            return jsonify({
+                "success": True,
+                "db_name": db_name,
+                "tb_name": tb_name,
+                "headers": headers,
+                "rows": rows,
+                "total": len(table_data) - 1  # 总数据量（排除表头）
+            })
+
+        except Exception as e:
+            app.logger.error(f"查询表数据失败: {str(e)}", exc_info=True)
+            return jsonify({
+                "error": "数据库或表不存在",
+                "details": str(e)  # 开发环境可返回详细信息，生产环境建议移除
+            }), 500
+
+        finally:
+            if db and db.connection and db.connection.is_connected():
+                db.disconnect()
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)  # 监听所有可用网络接口

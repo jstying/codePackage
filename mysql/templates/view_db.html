@@ -35,7 +35,7 @@
     </style>
 </head>
 <body>
-    <h1>数据库列表查看</h1>
+    <h2>数据库查看</h2>
 
     <!-- 搜索输入框 -->
     <div class="search-container">
@@ -48,12 +48,12 @@
 
     <div style="height: 10px;"></div>
     <div class="nav-buttons">
-        <a href="/" class="btn">去登录</a>
-        <a href="/upload" class="btn">去上传</a>
-        <a href="/delete_db" class="btn">去删除数据库</a>
-        <a href="/delete_tb" class="btn">去删除表</a>
-        <a href="/view_tb" class="btn">去查看表</a>
-        <a href="/download-csv" class="btn btn-danger">去下载表格</a>
+        <a href="/" class="btn">登录</a>
+        <a href="/upload" class="btn">上传</a>
+        <a href="/delete_db" class="btn">删除数据库</a>
+        <a href="/delete_tb" class="btn">删除表</a>
+        <a href="/view_tb" class="btn">查找表</a>
+        <a href="/show_tb" class="btn btn-danger">表数据查看</a>
     </div>
 
     <!-- 结果展示区域 -->
@@ -101,7 +101,7 @@
                 }
 
             } catch (error) {
-                errorMessage.textContent = `错误: ${error.message || '获取数据失败'}`;
+                errorMessage.innerHTML = `<p style="color: red;">错误: ${error.message || '获取数据失败'}</p>`;
                 errorMessage.style.display = 'block';
                 originalDatabases = [];
             }

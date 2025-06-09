@@ -48,7 +48,7 @@
     </style>
 </head>
 <body>
-    <h1>表格列表查看</h1>
+    <h2>表格查看</h2>
 
     <!-- 数据库名称查询表单 -->
     <div class="form-group">
@@ -80,12 +80,12 @@
     </div>
 
     <div class="nav-buttons">
-        <a href="/" class="btn">去登录</a>
-        <a href="/upload" class="btn">去上传</a>
-        <a href="/delete_db" class="btn">去删除数据库</a>
-        <a href="/delete_tb" class="btn">去删除表</a>
-        <a href="/view_db" class="btn">去查看数据库</a>
-        <a href="/download-csv" class="btn btn-danger">去下载表格</a>
+        <a href="/" class="btn">登录</a>
+        <a href="/upload" class="btn">上传</a>
+        <a href="/delete_db" class="btn">删除数据库</a>
+        <a href="/delete_tb" class="btn">删除表</a>
+        <a href="/view_db" class="btn">查找数据库</a>
+        <a href="/show_tb" class="btn btn-danger">表数据查看</a>
     </div>
 
     <div id="result" class="result" style="display: none;">
@@ -99,7 +99,7 @@
         let originalTables = []; // 存储原始表格数据
         let currentDbName = ''; // 当前数据库名称
 
-        function fetchTables() {
+        async function fetchTables() {
             const dbName = document.getElementById('db_name').value.trim();
             const resultDiv = document.getElementById('result');
             const errorMessage = document.getElementById('error-message');
@@ -108,24 +108,36 @@
                 errorMessage.textContent = "请输入数据库名称";
                 errorMessage.style.display = 'block';
                 resultDiv.style.display = 'block';
-                originalTables = [];
                 renderTables([]);
                 return;
             }
 
-            currentDbName = dbName;
             errorMessage.style.display = 'none';
             resultDiv.style.display = 'block';
 
-            // 模拟后端请求（需替换为实际接口）
-            // 这里假设返回数据格式为 { tables: ['table1', 'table2', ...] }
-            const mockData = {
-                tables: ['user_info', 'order_records', 'product_catalog', 'system_logs']
-            };
+            try {
+                const response = await fetch('/view_tb', {
+                    method: 'POST',
+                    body: new URLSearchParams({ db_name: dbName }) // 传递参数
+                });
 
-            originalTables = mockData.tables || [];
-            renderTables(originalTables); // 渲染原始数据
-            document.getElementById('empty-list').style.display = originalTables.length === 0 ? 'block' : 'none';
+
+                const RealData = await response.json();
+
+                // 检查响应中是否包含错误信息
+                if (RealData.error) {
+                    throw new Error(RealData.error); // 使用后端返回的具体错误信息
+                }
+
+                originalTables = RealData.tables || [];
+                renderTables(originalTables);
+                document.getElementById('empty-list').style.display = originalTables.length === 0 ? 'block' : 'none';
+            } catch (error) {
+                // 修正HTML结构并使用 innerHTML
+                errorMessage.innerHTML = `<p style="color: red;">错误: ${error.message || '获取数据失败'}</p>`;
+                errorMessage.style.display = 'block'; // 显示错误容器
+                renderTables([]); // 清空表格数据
+            }
         }
 
         function renderTables(tables) {
