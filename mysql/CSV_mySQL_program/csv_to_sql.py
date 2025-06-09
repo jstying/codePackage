@@ -359,9 +359,66 @@ class MySQLDatabase:
             if cursor:
                 cursor.close()
 
+    def download_csv(self, db_name, tb_name, output_path, limit=10000):
+        """
+        从指定表导出数据到CSV文件（带表头）
+        :param db_name: 数据库名
+        :param tb_name: 表名
+        :param output_path: CSV文件保存路径
+        :param limit: 最大导出行数（默认10000行）
+        :return: 成功/失败
+        """
+        if not self.connection or not self.connection.is_connected():
+            print("未连接到数据库服务器")
+            return False
 
-import csv
-from decimal import Decimal
+        # 安全检查：拒绝操作系统数据库
+        if db_name.lower() in {'sakila', 'world', 'sys', 'information_schema', 'performance_schema', 'mysql'}:
+            print(f"拒绝操作：系统数据库 {db_name} 不可访问")
+            return False
+
+        try:
+            # 切换到目标数据库
+            if not self.use_database(db_name):
+                print(f"无法切换到数据库：{db_name}")
+                return False
+
+            # 构建安全的表名（使用反引号转义，防止 SQL 注入）
+            tb_name_safe = f"`{tb_name}`"
+
+            # 构建查询语句（带 LIMIT 分页）
+            query = f"SELECT * FROM {tb_name_safe} LIMIT {limit}"
+
+            cursor = self.connection.cursor()
+            cursor.execute(query)
+
+            # 获取表头（列名）
+            columns = [column[0] for column in cursor.description]
+
+            # 获取所有数据行
+            rows = cursor.fetchall()
+
+            # 写入CSV文件
+            with open(output_path, 'w', newline='', encoding='utf-8') as csv_file:
+                writer = csv.writer(csv_file)
+                writer.writerow(columns)  # 写入表头
+                writer.writerows(rows)  # 写入数据行
+
+            print(f"成功导出表 {db_name}.{tb_name} 到 {output_path}，共导出 {len(rows)} 条记录")
+            return True
+
+        except self.connection.Error as e:
+            print(f"导出表数据时发生错误：{e}")
+            return False
+
+        finally:
+            if cursor:
+                cursor.close()
+
+
+
+
+
 
 
 def parse_csv_structure(csv_path):
@@ -427,6 +484,12 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # 如果uploads目录不存在，创建目录
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+
+if not os.path.exists('downloads'):
+    os.makedirs('downloads')
+
+
 
 # 辅助函数：检查文件扩展名是否合法（如 .csv）
 def allowed_file(filename):
@@ -744,6 +807,54 @@ def show_table():
         finally:
             if db and db.connection and db.connection.is_connected():
                 db.disconnect()
+
+
+@app.route('/download_tb', methods=['POST'])
+def download_table():
+    try:
+        db_name = request.form.get('db_name').strip()
+        tb_name = request.form.get('tb_name').strip()
+
+        # 表单验证
+        if not db_name or not tb_name:
+            return jsonify({"error": "请填写数据库名和表名"}), 400
+
+        # 创建数据库连接
+        db = MySQLDatabase(**db_config)
+        if not db.connect():
+            return jsonify({"error": "数据库连接失败"}), 500
+
+        # 生成临时CSV文件路径
+        download_folder = 'downloads'
+        os.makedirs(download_folder, exist_ok=True)
+        filename = f"{db_name}_{tb_name}_export.csv"
+        output_path = os.path.join(download_folder, filename)
+
+        # 调用download_csv方法导出数据
+        if not db.download_csv(db_name, tb_name, output_path):
+            return jsonify({"error": "数据导出失败"}), 500
+
+        # 返回CSV文件作为响应
+        with open(output_path, 'rb') as f:
+            response = make_response(f.read())
+            response.headers['Content-Disposition'] = f'attachment; filename={filename}'
+            response.headers['Content-Type'] = 'text/csv; charset=utf-8-sig'  # 使用UTF-8 BOM确保Excel正确解析中文
+
+        # 可选：下载后删除临时文件
+        os.remove(output_path)
+
+        return response
+
+    except Exception as e:
+        app.logger.error(f"下载数据失败: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "数据下载失败，请重试",
+            "details": str(e)
+        }), 500
+
+    finally:
+        if db and db.connection and db.connection.is_connected():
+            db.disconnect()
 
 
 if __name__ == '__main__':

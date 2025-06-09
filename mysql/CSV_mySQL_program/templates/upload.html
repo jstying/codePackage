@@ -9,8 +9,8 @@
     </style>
 </head>
 <body>
-    <h2>删除表</h2>
-    <form method="post" enctype="multipart/form-data" action="/delete_tb">
+    <h2>上传文件</h2>
+    <form method="post" enctype="multipart/form-data" action="/upload">
 
         <!-- 新增空行间隔 -->
         <div style="height: 10px;"></div>
@@ -23,25 +23,24 @@
             </div>
         </div>
 
-
         <!-- 新增空行间隔 -->
-        <div style="height: 10px;"></div>
+        <div style="height: 10px;"></div> <!-- 高度可调整 -->
 
-        <!-- 新增表名称输入框 -->
+         <!-- 新增表名称输入框 -->
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700">表名称</label>
             <div class="mt-1">
-                <input type="text" name="tb_name" class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+                <input type="text" name="tb_name"  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
             </div>
         </div>
-
-
 
         <!-- 新增空行间隔 -->
         <div style="height: 30px;"></div> <!-- 高度可调整 -->
 
+        <!--文件选择按钮-->
+        <input type="file" name="file" accept=".csv">
         <!--提交按钮-->
-        <input type="submit" value="删除">
+        <input type="submit" value="上传">
 
     </form>
 
@@ -53,12 +52,12 @@
         <a href="/" class="btn btn-danger">登录</a>
     </div>
 
-    <div class="mt-4">
-        <a href="/upload" class="btn btn-danger">上传</a>
+     <div class="mt-4">
+        <a href="/delete_db" class="btn btn-danger">删除数据库</a>
     </div>
 
     <div class="mt-4">
-        <a href="/delete_db" class="btn btn-danger">删除数据库</a>
+        <a href="/delete_tb" class="btn btn-danger">删除表</a>
     </div>
 
     <div class="mt-4">
@@ -70,10 +69,8 @@
     </div>
 
     <div class="mt-4">
-        <a href="/show_tb" class="btn btn-danger">表数据查看</a>
+        <a href="/show_tb" class="btn btn-danger">表数据查看和下载</a>
     </div>
-
-
 
 
     <!--初始隐藏，数据有了才显示-->
@@ -89,14 +86,14 @@
             // 获取用于显示结果的  <div id="result" 元素
             const resultDiv = document.getElementById('result');
 
-            fetch('/delete_tb', { method: 'POST', body: formData })
+            fetch('/upload', { method: 'POST', body: formData })
                 // 处理json解析，后端返回的
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
                         // js中设置html元素内容
                         resultDiv.innerHTML = `
-                            <h3 style="color: green;">表格删除成功！</h3>
+                            <h3 style="color: green;">上传成功！</h3>
                         `;
                     } else {
                         resultDiv.innerHTML = `<p style="color: red;">错误: ${data.error}</p>`;

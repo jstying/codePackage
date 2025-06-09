@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>表数据查看</title>
+  <title>表数据查看和下载</title>
 
   <!-- 移除 Font Awesome 引用 -->
   <!-- 自定义基础样式（去除图标相关代码） -->
@@ -85,9 +85,20 @@
       margin: 0 auto; /* 居中显示 */
     }
 
+
+
     button:hover {
       background-color: #2563eb;
     }
+
+
+
+    /* 修复按钮宽度被覆盖的问题 */
+    #downloadBtn, #showTableBtn {
+      width: auto !important;
+      max-width: none;
+    }
+
 
     .result {
       margin-top: 20px;
@@ -138,7 +149,7 @@
   <main>
     <div class="max-w-5xl mx-auto">
       <div class="mb-8 text-center">
-        <h2 class="font-bold text-dark mb-2">表数据查看</h2>
+        <h2 class="font-bold text-dark mb-2">表数据查看和下载</h2>
       </div>
 
       <!-- 移除导航栏中的图标 -->
@@ -173,6 +184,12 @@
             <button type="submit" id="showTableBtn">
               查看数据
             </button>
+
+             <!-- 新增下载按钮 -->
+            <button type="button" id="downloadBtn" class="w-auto bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+              下载CSV
+            </button>
+
           </div>
         </form>
       </div>
@@ -195,8 +212,9 @@
               <tr id="tableHeader"></tr>
             </thead>
             <tbody id="tableBody"></tbody>
+
           </table>
-          <p class="text-sm text-gray-600 mt-4">最多显示前 100 条记录。如需查看更多数据，请使用 SQL 查询功能。</p>
+          <p class="text-sm text-gray-600 mt-4">最多显示前 100 条记录, 导出上限为 10000 行。如需查看更多数据，请使用 SQL 查询功能。</p>
         </div>
       </div>
     </div>
@@ -216,6 +234,52 @@
       const tableHeader = document.getElementById('tableHeader');
       const tableBody = document.getElementById('tableBody');
       const showTableBtn = document.getElementById('showTableBtn');
+      const downloadBtn = document.getElementById('downloadBtn'); // 获取下载按钮
+
+      downloadBtn.addEventListener('click', async function() {
+        const dbName = this.dataset.dbName;
+        const tbName = this.dataset.tbName;
+
+        if (!dbName || !tbName) {
+          showError('请先查询数据');
+          return;
+        }
+
+        // 显示加载状态
+        loadingIndicator.classList.remove('hidden');
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = '下载中...';
+
+        try {
+          const response = await fetch('/download_tb', {
+            method: 'POST',
+            body: new URLSearchParams({ db_name: dbName, tb_name: tbName })
+          });
+
+          if (!response.ok) {
+            throw new Error('下载失败');
+          }
+
+          // 创建临时下载链接（处理浏览器兼容性）
+          const blob = await response.blob();
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `${dbName}_${tbName}_export.csv`;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+        } catch (error) {
+          showError('下载数据失败，请重试');
+        } finally {
+          loadingIndicator.classList.add('hidden');
+          downloadBtn.disabled = false;
+          downloadBtn.textContent = '下载CSV';
+       }
+      });
+
+
 
       form.addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -241,18 +305,23 @@
             method: 'POST',
             body: new URLSearchParams({ db_name: dbName, tb_name: tbName })
           });
-
-
-
           const data = await response.json();
 
           if (data.error) {
             throw new Error(data.error);
           }
+           // **新增：激活下载按钮并绑定表名/库名**
+          downloadBtn.disabled = false;
+          downloadBtn.dataset.dbName = dbName;
+          downloadBtn.dataset.tbName = tbName;
+
+
 
           renderTable(data, dbName, tbName);
 
         } catch (error) {
+          // 重置下载按钮状态
+          downloadBtn.disabled = true;
           showError(error.message);
         } finally {
           loadingIndicator.classList.add('hidden');
@@ -260,6 +329,8 @@
           showTableBtn.textContent = '查看数据';
         }
       });
+
+
 
       function showError(message) {
         errorMessage.classList.remove('hidden');
@@ -273,6 +344,12 @@
         tableHeader.innerHTML = '';
         tableBody.innerHTML = '';
 
+        // **新增：在表头中添加序号列**
+        const th = document.createElement('th');
+        th.textContent = '序号';
+        tableHeader.appendChild(th);
+
+        // 渲染原有表头
         data.headers.forEach(header => {
           const th = document.createElement('th');
           th.textContent = header;
@@ -283,13 +360,22 @@
         rowsToShow.forEach((row, index) => {
           const tr = document.createElement('tr');
           if (index % 2 === 0) {
-            tr.classList.add('bg-gray-50');
+            tr.classList.add('bg-gray-50'); // 保持原有斑马线效果
           }
+
+          // **新增：在每行开头添加序号单元格**
+          const serialTd = document.createElement('td');
+          serialTd.textContent = index + 1; // 序号从1开始
+          serialTd.style.textAlign = 'center'; // 序号居中显示
+          tr.appendChild(serialTd);
+
+          // 渲染原有数据单元格
           row.forEach(cell => {
             const td = document.createElement('td');
             td.textContent = cell === null || cell === undefined ? '-' : cell;
             tr.appendChild(td);
           });
+
           tableBody.appendChild(tr);
         });
 
