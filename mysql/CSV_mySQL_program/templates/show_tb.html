@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>表数据查看和下载</title>
 
-  <!-- 移除 Font Awesome 引用 -->
-  <!-- 自定义基础样式（去除图标相关代码） -->
+  <!-- 自定义基础样式 -->
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -21,7 +21,7 @@
       color: white;
       padding: 15px;
       margin-bottom: 20px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
     nav ul {
@@ -44,7 +44,7 @@
       background-color: white;
       padding: 20px;
       border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       margin-bottom: 20px;
     }
 
@@ -80,32 +80,27 @@
       border-radius: 4px;
       cursor: pointer;
       margin-top: 10px;
-      width: 100%; /* 调整按钮宽度为100% */
-      max-width: 100px; /* 限制最大宽度 */
-      margin: 0 auto; /* 居中显示 */
+      width: 100%;
+      max-width: 100px;
+      margin: 0 auto;
     }
-
-
 
     button:hover {
       background-color: #2563eb;
     }
 
-
-
-    /* 修复按钮宽度被覆盖的问题 */
-    #downloadBtn, #showTableBtn {
+    #downloadBtn,
+    #showTableBtn {
       width: auto !important;
       max-width: none;
     }
-
 
     .result {
       margin-top: 20px;
       padding: 15px;
       background-color: white;
       border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
 
     .error {
@@ -119,7 +114,8 @@
       margin-top: 15px;
     }
 
-    th, td {
+    th,
+    td {
       padding: 10px;
       border-bottom: 1px solid #ddd;
     }
@@ -142,8 +138,73 @@
     .hidden {
       display: none;
     }
+
+    /* 分页按钮样式 - 类似百度风格 */
+    .pagination-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      gap: 5px;
+    }
+
+    .pagination-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #e1e4e8;
+      background-color: #fff;
+      color: #3b82f6;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      border-radius: 0;
+      font-size: 14px;
+    }
+
+    /* 数字页码按钮 - 正方形 */
+    .pagination-btn:not(.direction-btn) {
+      min-width: 36px;
+      height: 36px;
+      padding: 0;
+    }
+
+    /* 方向按钮 - 长方形 */
+    .pagination-btn.direction-btn {
+      min-width: 60px;
+      height: 36px;
+      padding: 0 12px;
+      font-size: 12px;
+      /* 缩小字体 */
+    }
+
+    .pagination-btn:hover:not(.active) {
+      border-color: #3b82f6;
+      background-color: #f0f7ff;
+    }
+
+    .pagination-btn.active {
+      background-color: #3b82f6;
+      color: #fff;
+      border-color: #3b82f6;
+      font-weight: bold;
+    }
+
+    .pagination-btn.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pagination-ellipsis {
+      display: flex;
+      align-items: center;
+      padding: 0 8px;
+      color: #666;
+    }
+
   </style>
 </head>
+
 <body>
 
   <main>
@@ -152,51 +213,51 @@
         <h2 class="font-bold text-dark mb-2">表数据查看和下载</h2>
       </div>
 
-      <!-- 移除导航栏中的图标 -->
       <div class="nav-buttons">
         <a href="/" class="btn">登录</a>
         <a href="/upload" class="btn">上传</a>
         <a href="/delete_db" class="btn">删除数据库</a>
         <a href="/delete_tb" class="btn">删除表</a>
         <a href="/view_db" class="btn">查找数据库</a>
-        <a href="/view_tb" class="btn">查找表</a> <!-- 移除 btn-danger 类 -->
+        <a href="/view_tb" class="btn">查找表</a>
       </div>
       <div style="height: 30px;"></div>
 
       <div class="form-container">
         <form id="showTableForm" class="space-y-4">
+          <input type="hidden" name="page" id="page" value="1">
+          <input type="hidden" name="limit" value="10">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="form-group">
               <label for="db_name">数据库名</label>
-              <!-- 移除图标相关的 HTML 结构 -->
               <input type="text" id="db_name" name="db_name" placeholder="输入数据库名">
             </div>
 
             <div class="form-group">
               <label for="tb_name">表名</label>
-              <!-- 移除图标相关的 HTML 结构 -->
               <input type="text" id="tb_name" name="tb_name" placeholder="输入表名">
             </div>
           </div>
 
-          <div class="pt-2">
-            <!-- 移除按钮中的图标，调整文本居中 -->
+          <div class="form-group">
+            <label for="search">搜索</label>
+            <input type="text" id="search" name="search" placeholder="输入搜索关键字">
+          </div>
+
+          <div class="pt-2 flex justify-center gap-4">
             <button type="submit" id="showTableBtn">
               查看数据
             </button>
 
-             <!-- 新增下载按钮 -->
-            <button type="button" id="downloadBtn" class="w-auto bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+            <button type="button" id="downloadBtn" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
               下载CSV
             </button>
-
           </div>
         </form>
       </div>
 
       <div id="resultArea" class="result hidden">
         <div id="loadingIndicator" class="loading">
-          <!-- 移除旋转图标，改用纯文本提示 -->
           <p class="mt-4">正在查询数据，请稍候...</p>
         </div>
 
@@ -212,17 +273,17 @@
               <tr id="tableHeader"></tr>
             </thead>
             <tbody id="tableBody"></tbody>
-
           </table>
-          <p class="text-sm text-gray-600 mt-4">最多显示前 100 条记录, 导出上限为 10000 行。如需查看更多数据，请使用 SQL 查询功能。</p>
+
+          <!-- 分页容器 -->
+          <div id="paginationContainer" class="pagination-container"></div>
         </div>
       </div>
     </div>
   </main>
 
   <script>
-    // JavaScript 部分无需修改（仅移除与图标相关的操作，此处代码与原版本一致）
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       const form = document.getElementById('showTableForm');
       const resultArea = document.getElementById('resultArea');
       const loadingIndicator = document.getElementById('loadingIndicator');
@@ -234,9 +295,16 @@
       const tableHeader = document.getElementById('tableHeader');
       const tableBody = document.getElementById('tableBody');
       const showTableBtn = document.getElementById('showTableBtn');
-      const downloadBtn = document.getElementById('downloadBtn'); // 获取下载按钮
+      const downloadBtn = document.getElementById('downloadBtn');
+      const searchInput = document.getElementById('search');
 
-      downloadBtn.addEventListener('click', async function() {
+      // 分页变量
+      let currentPage = 1;
+      const itemsPerPage = 10;
+      let totalPages = 1;
+      let totalRows = 0;
+
+      downloadBtn.addEventListener('click', async function () {
         const dbName = this.dataset.dbName;
         const tbName = this.dataset.tbName;
 
@@ -245,7 +313,6 @@
           return;
         }
 
-        // 显示加载状态
         loadingIndicator.classList.remove('hidden');
         downloadBtn.disabled = true;
         downloadBtn.textContent = '下载中...';
@@ -260,7 +327,6 @@
             throw new Error('下载失败');
           }
 
-          // 创建临时下载链接（处理浏览器兼容性）
           const blob = await response.blob();
           const link = document.createElement('a');
           link.href = URL.createObjectURL(blob);
@@ -276,16 +342,141 @@
           loadingIndicator.classList.add('hidden');
           downloadBtn.disabled = false;
           downloadBtn.textContent = '下载CSV';
-       }
+        }
       });
 
-
-
-      form.addEventListener('submit', async function(e) {
+      form.addEventListener('submit', async function (e) {
         e.preventDefault();
+        currentPage = 1;
+        fetchData();
+      });
 
+      searchInput.addEventListener('input', function () {
+        currentPage = 1;
+        fetchData();
+      });
+
+      function showError(message) {
+        errorMessage.classList.remove('hidden');
+        errorText.textContent = `错误: ${message || '获取数据失败'}`;
+      }
+
+      async function renderTable(data, dbName, tbName) {
+        totalRows = data.total;
+        totalPages = Math.ceil(totalRows / itemsPerPage);
+
+        tableTitle.textContent = `${dbName}.${tbName}`;
+        tableInfo.textContent = `共 ${totalRows} 条记录`;
+
+        tableHeader.innerHTML = '';
+        tableBody.innerHTML = '';
+
+        // 添加序号列
+        const th = document.createElement('th');
+        th.textContent = '序号';
+        tableHeader.appendChild(th);
+
+        // 渲染表头
+        data.headers.forEach(header => {
+          const th = document.createElement('th');
+          th.textContent = header;
+          tableHeader.appendChild(th);
+        });
+
+        // 渲染表格数据
+        data.rows.forEach((row, index) => {
+          const tr = document.createElement('tr');
+          if (index % 2 === 0) {
+            tr.classList.add('bg-gray-50');
+          }
+
+          // 添加序号单元格
+          const serialTd = document.createElement('td');
+          serialTd.textContent = index + 1 + (currentPage - 1) * itemsPerPage;
+          serialTd.style.textAlign = 'center';
+          tr.appendChild(serialTd);
+
+          // 渲染数据单元格
+          row.forEach(cell => {
+            const td = document.createElement('td');
+            td.textContent = cell === null || cell === undefined ? '-' : cell;
+            tr.appendChild(td);
+          });
+
+          tableBody.appendChild(tr);
+        });
+
+        tableResult.classList.remove('hidden');
+        renderPagination();
+      }
+
+      // 渲染分页按钮（类似百度风格）
+      function renderPagination() {
+        const container = document.getElementById('paginationContainer');
+        container.innerHTML = '';
+
+        // 添加上一页按钮
+        const prevBtn = document.createElement('button');
+        prevBtn.className = `pagination-btn direction-btn ${currentPage === 1 ? 'disabled' : ''}`;
+        prevBtn.textContent = '上一页';
+        prevBtn.addEventListener('click', () => {
+          if (currentPage > 1) {
+            currentPage--;
+            fetchData(currentPage);
+          }
+        });
+        container.appendChild(prevBtn);
+
+        let startPage = Math.max(1, currentPage - 5);
+        let endPage = Math.min(totalPages, startPage + 9);
+
+        if (endPage - startPage < 9 && startPage > 1) {
+          startPage = Math.max(1, endPage - 9);
+        }
+
+        if (startPage > 1) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'pagination-ellipsis';
+          ellipsis.textContent = '...';
+          container.appendChild(ellipsis);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          const pageBtn = document.createElement('button');
+          pageBtn.className = `pagination-btn ${currentPage === i ? 'active' : ''}`;
+          pageBtn.textContent = i;
+          pageBtn.addEventListener('click', () => {
+            currentPage = i;
+            fetchData(currentPage);
+          });
+          container.appendChild(pageBtn);
+        }
+
+        if (endPage < totalPages) {
+          const ellipsis = document.createElement('span');
+          ellipsis.className = 'pagination-ellipsis';
+          ellipsis.textContent = '...';
+          container.appendChild(ellipsis);
+        }
+
+        // 添加下一页按钮
+        const nextBtn = document.createElement('button');
+        nextBtn.className = `pagination-btn direction-btn ${currentPage === totalPages ? 'disabled' : ''}`;
+        nextBtn.textContent = '下一页';
+        nextBtn.addEventListener('click', () => {
+          if (currentPage < totalPages) {
+            currentPage++;
+            fetchData(currentPage);
+          }
+        });
+        container.appendChild(nextBtn);
+      }
+
+      // 获取数据（带分页和搜索）
+      async function fetchData(page = 1) {
         const dbName = document.getElementById('db_name').value.trim();
         const tbName = document.getElementById('tb_name').value.trim();
+        const search = document.getElementById('search').value.trim();
 
         if (!dbName || !tbName) {
           showError('请输入数据库名和表名');
@@ -298,29 +489,32 @@
         tableResult.classList.add('hidden');
 
         showTableBtn.disabled = true;
-        showTableBtn.textContent = '查询中...'; // 简化按钮文本
+        showTableBtn.textContent = '查询中...';
 
         try {
           const response = await fetch('/show_tb', {
             method: 'POST',
-            body: new URLSearchParams({ db_name: dbName, tb_name: tbName })
+            body: new URLSearchParams({
+              db_name: dbName,
+              tb_name: tbName,
+              page: page,
+              limit: itemsPerPage,
+              search: search
+            })
           });
           const data = await response.json();
 
           if (data.error) {
             throw new Error(data.error);
           }
-           // **新增：激活下载按钮并绑定表名/库名**
+
           downloadBtn.disabled = false;
           downloadBtn.dataset.dbName = dbName;
           downloadBtn.dataset.tbName = tbName;
 
-
-
           renderTable(data, dbName, tbName);
 
         } catch (error) {
-          // 重置下载按钮状态
           downloadBtn.disabled = true;
           showError(error.message);
         } finally {
@@ -328,60 +522,9 @@
           showTableBtn.disabled = false;
           showTableBtn.textContent = '查看数据';
         }
-      });
-
-
-
-      function showError(message) {
-        errorMessage.classList.remove('hidden');
-        errorText.textContent = `错误: ${message || '获取数据失败'}`;
-      }
-
-      function renderTable(data, dbName, tbName) {
-        tableTitle.textContent = `${dbName}.${tbName}`;
-        tableInfo.textContent = `共 ${data.rows.length} 条记录（显示前100条）`;
-
-        tableHeader.innerHTML = '';
-        tableBody.innerHTML = '';
-
-        // **新增：在表头中添加序号列**
-        const th = document.createElement('th');
-        th.textContent = '序号';
-        tableHeader.appendChild(th);
-
-        // 渲染原有表头
-        data.headers.forEach(header => {
-          const th = document.createElement('th');
-          th.textContent = header;
-          tableHeader.appendChild(th);
-        });
-
-        const rowsToShow = data.rows.slice(0, 100);
-        rowsToShow.forEach((row, index) => {
-          const tr = document.createElement('tr');
-          if (index % 2 === 0) {
-            tr.classList.add('bg-gray-50'); // 保持原有斑马线效果
-          }
-
-          // **新增：在每行开头添加序号单元格**
-          const serialTd = document.createElement('td');
-          serialTd.textContent = index + 1; // 序号从1开始
-          serialTd.style.textAlign = 'center'; // 序号居中显示
-          tr.appendChild(serialTd);
-
-          // 渲染原有数据单元格
-          row.forEach(cell => {
-            const td = document.createElement('td');
-            td.textContent = cell === null || cell === undefined ? '-' : cell;
-            tr.appendChild(td);
-          });
-
-          tableBody.appendChild(tr);
-        });
-
-        tableResult.classList.remove('hidden');
       }
     });
   </script>
 </body>
+
 </html>
