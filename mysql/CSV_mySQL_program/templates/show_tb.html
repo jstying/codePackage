@@ -95,6 +95,46 @@
       max-width: none;
     }
 
+    /* 修改下载按钮为黄色 */
+    #downloadBtn {
+      background-color: orange;
+      /* 黄色 */
+      color: white;
+      /* 深色文字提高对比度 */
+    }
+
+    #downloadBtn:hover {
+      background-color: darkorange;
+      /* 深黄色 */
+    }
+
+    #downloadBtn.disabled {
+      background-color: #fcd34d;
+      /* 禁用状态的黄色 */
+      color: white;
+    }
+
+      #deleteBtn {
+      background-color: red;
+      /* 黄色 */
+      color: white;
+      /* 深色文字提高对比度 */
+    }
+
+    #deleteBtn:hover {
+      background-color: #dc2626;
+      /* 深黄色 */
+    }
+
+    #deleteBtn.disabled {
+      background-color: red;
+      /* 禁用状态的黄色 */
+      color: white;
+    }
+
+
+
+
     .result {
       margin-top: 20px;
       padding: 15px;
@@ -202,6 +242,172 @@
       color: #666;
     }
 
+    /* 搜索区域样式 */
+    .search-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-group input,
+    .search-group select {
+      flex: 0.5;
+      padding: 8px;
+    }
+
+    .search-group button.reset-btn {
+      flex: 1;
+      width: auto;
+    }
+
+    .search-group button.reset-btn {
+      background-color: white;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+
+    .search-group button.reset-btn:hover {
+      background-color: #f0f0f0;
+    }
+
+    /* 新增前往页码输入框和按钮样式 */
+    .go-to-page {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      gap: 10px;
+    }
+
+    .go-to-page input {
+      width: 100px;
+      margin-right: 1px;
+    }
+
+    .go-to-page button {
+      width: auto;
+      margin-left: 1px;
+    }
+
+    /* 新增新建按钮样式 */
+    #newBtn {
+      background-color: #3b82f6;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    #newBtn:hover {
+      background-color: #2563eb;
+    }
+
+    /* 新增弹窗样式 */
+    #popup {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: white;
+      padding: 20px;
+      padding-bottom: 40px;
+      /* 加大底部内边距，给按钮更多空间 */
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+      display: none;
+      width: 300px;
+      /* 增加宽度 */
+      max-width: 90%;
+      /* 响应式处理 */
+      max-height: 80vh;
+      /* 最大高度为视口高度的80% */
+      overflow-y: auto;
+      /* 如果内容超出高度，显示滚动条 */
+    }
+
+    #popup-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      display: none;
+    }
+
+    /* 修改提交按钮样式 */
+    #popup-submit {
+      background-color: dodgerblue;
+      /* 修改背景颜色为绿色 */
+      color: white;
+      padding: 12px 24px;
+      /* 增大内边距 */
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 40px;
+      /* 增加顶部外边距，拉开与输入框的距离 */
+      margin-left: 20px;
+      width: 120px;
+      max-width: 120px;
+      margin-right: 5px;
+      /* 增加右侧外边距，与取消按钮拉开距离 */
+    }
+
+    #popup-submit:hover {
+      background-color: royalblue;
+      /* 鼠标悬停时的背景颜色 */
+    }
+
+
+     #saveBtn {
+      background-color: dodgerblue;
+      /* 修改背景颜色为绿色 */
+      color: white;
+      padding: 12px 24px;
+      /* 增大内边距 */
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 40px;
+      /* 增加顶部外边距，拉开与输入框的距离 */
+      margin-left: 20px;
+      width: 120px;
+      max-width: 120px;
+      margin-right: 5px;
+      /* 增加右侧外边距，与取消按钮拉开距离 */
+    }
+
+    #saveBtn:hover {
+      background-color: royalblue;
+      /* 鼠标悬停时的背景颜色 */
+    }
+
+
+
+    /* 修改取消按钮样式 */
+    #popup-cancel {
+      background-color: red;
+      /* 修改背景颜色为红色 */
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 120px;
+      max-width: 120px;
+    }
+
+    #popup-cancel:hover {
+      background-color: #dc2626;
+      /* 鼠标悬停时的背景颜色 */
+    }
+
   </style>
 </head>
 
@@ -241,7 +447,13 @@
 
           <div class="form-group">
             <label for="search">搜索</label>
-            <input type="text" id="search" name="search" placeholder="输入搜索关键字">
+            <div class="search-group">
+              <input type="text" id="search" name="search" placeholder="输入搜索关键字">
+              <select id="searchColumn" name="searchColumn">
+                <option value="">全部列</option>
+              </select>
+              <button type="button" class="reset-btn">重置</button>
+            </div>
           </div>
 
           <div class="pt-2 flex justify-center gap-4">
@@ -249,9 +461,14 @@
               查看数据
             </button>
 
-            <button type="button" id="downloadBtn" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+            <button type="button" id="downloadBtn" class="bg-blue-600 hover:bg-blue-700 disabled:opacity-50" disabled>
               下载CSV
             </button>
+            <!-- 移动新建按钮到这里 -->
+            <button id="newBtn" disabled>新建</button>
+            <!-- 新增删除和修改按钮 -->
+            <button id="deleteBtn" disabled>删除</button>
+            <button id="modifyBtn" disabled>修改</button>
           </div>
         </form>
       </div>
@@ -277,10 +494,31 @@
 
           <!-- 分页容器 -->
           <div id="paginationContainer" class="pagination-container"></div>
+          <!-- 新增前往页码输入框和按钮 -->
+          <div class="go-to-page">
+            <label for="goToPage">前往</label>
+            <input type="number" id="goToPage" min="1" value="1">
+            <button type="button" id="goToPageBtn">页</button>
+          </div>
         </div>
       </div>
     </div>
   </main>
+
+  <!-- 新增弹窗元素 -->
+  <div id="popup-overlay"></div>
+  <div id="popup">
+    <h3>新建/修改数据</h3>
+    <div id="popup-inputs"></div>
+    <button id="popup-submit">新建</button>
+    <button id="saveBtn">修改</button>
+    <button id="popup-cancel">取消</button>
+  </div>
+
+
+
+
+
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
@@ -297,12 +535,29 @@
       const showTableBtn = document.getElementById('showTableBtn');
       const downloadBtn = document.getElementById('downloadBtn');
       const searchInput = document.getElementById('search');
+      const searchColumn = document.getElementById('searchColumn');
+      const resetBtn = document.querySelector('.reset-btn');
+      const goToPageInput = document.getElementById('goToPage');
+      const goToPageBtn = document.getElementById('goToPageBtn');
+      const newBtn = document.getElementById('newBtn');
+      const popup = document.getElementById('popup');
+      const popupOverlay = document.getElementById('popup-overlay');
+      const popupSubmit = document.getElementById('popup-submit');
+      const popupCancel = document.getElementById('popup-cancel');
+      const deleteBtn = document.getElementById('deleteBtn');
+      const modifyBtn = document.getElementById('modifyBtn');
+          const saveBtn = document.getElementById('saveBtn'); // 新增：获取保存按钮
+
+
 
       // 分页变量
       let currentPage = 1;
       const itemsPerPage = 10;
       let totalPages = 1;
       let totalRows = 0;
+      // 保存搜索条件
+      let savedSearch = '';
+      let savedSearchColumn = '';
 
       downloadBtn.addEventListener('click', async function () {
         const dbName = this.dataset.dbName;
@@ -348,12 +603,18 @@
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         currentPage = 1;
+        goToPageInput.value = 1;
+        // 保存搜索条件
+        savedSearch = searchInput.value.trim();
+        savedSearchColumn = searchColumn.value;
         fetchData();
       });
 
-      searchInput.addEventListener('input', function () {
-        currentPage = 1;
-        fetchData();
+      resetBtn.addEventListener('click', function () {
+        searchInput.value = '';
+        searchColumn.value = '';
+        savedSearch = '';
+        savedSearchColumn = '';
       });
 
       function showError(message) {
@@ -362,53 +623,75 @@
       }
 
       async function renderTable(data, dbName, tbName) {
-        totalRows = data.total;
-        totalPages = Math.ceil(totalRows / itemsPerPage);
+  totalRows = data.total;
+  totalPages = Math.ceil(totalRows / itemsPerPage);
 
-        tableTitle.textContent = `${dbName}.${tbName}`;
-        tableInfo.textContent = `共 ${totalRows} 条记录`;
+  tableTitle.textContent = `${dbName}.${tbName}`;
+  tableInfo.textContent = `共 ${totalRows} 条记录`;
 
-        tableHeader.innerHTML = '';
-        tableBody.innerHTML = '';
+  tableHeader.innerHTML = '';
+  tableBody.innerHTML = '';
+  searchColumn.innerHTML = '<option value="">全部列</option>';
 
-        // 添加序号列
-        const th = document.createElement('th');
-        th.textContent = '序号';
-        tableHeader.appendChild(th);
+  // 添加多选框列
+  const checkboxTh = document.createElement('th');
+  checkboxTh.textContent = '选择';
+  tableHeader.appendChild(checkboxTh);
 
-        // 渲染表头
-        data.headers.forEach(header => {
-          const th = document.createElement('th');
-          th.textContent = header;
-          tableHeader.appendChild(th);
-        });
+  // 渲染表头 - 不再手动添加ID列
+  data.headers.forEach(header => {
+    const th = document.createElement('th');
+    th.textContent = header;
+    tableHeader.appendChild(th);
 
-        // 渲染表格数据
-        data.rows.forEach((row, index) => {
-          const tr = document.createElement('tr');
-          if (index % 2 === 0) {
-            tr.classList.add('bg-gray-50');
-          }
+    const option = document.createElement('option');
+    option.value = header;
+    option.textContent = header;
+    searchColumn.appendChild(option);
+  });
 
-          // 添加序号单元格
-          const serialTd = document.createElement('td');
-          serialTd.textContent = index + 1 + (currentPage - 1) * itemsPerPage;
-          serialTd.style.textAlign = 'center';
-          tr.appendChild(serialTd);
+  // 恢复搜索条件
+  searchInput.value = savedSearch;
+  searchColumn.value = savedSearchColumn;
 
-          // 渲染数据单元格
-          row.forEach(cell => {
+  // 渲染表格数据
+  data.rows.forEach((row, index) => {
+    const tr = document.createElement('tr');
+    if (index % 2 === 0) {
+      tr.classList.add('bg-gray-50');
+    }
+
+    // 添加多选框单元格
+    const checkboxTd = document.createElement('td');
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkboxTd.appendChild(checkbox);
+    tr.appendChild(checkboxTd);
+
+
+    // 渲染数据单元格 - 修复colIndex未定义的问题
+        row.forEach((cell, colIndex) => {
             const td = document.createElement('td');
+            // 为ID单元格添加一个特殊的类，方便后续查找
+            if (colIndex === 0) {
+                td.classList.add('id-cell');
+            }
             td.textContent = cell === null || cell === undefined ? '-' : cell;
             tr.appendChild(td);
-          });
-
-          tableBody.appendChild(tr);
         });
 
-        tableResult.classList.remove('hidden');
-        renderPagination();
-      }
+    tableBody.appendChild(tr);
+  });
+
+  tableResult.classList.remove('hidden');
+  renderPagination();
+
+  // 启用下载和新建按钮
+  downloadBtn.disabled = false;
+  newBtn.disabled = false;
+  deleteBtn.disabled = false;
+  modifyBtn.disabled = false;
+}
 
       // 渲染分页按钮（类似百度风格）
       function renderPagination() {
@@ -422,10 +705,25 @@
         prevBtn.addEventListener('click', () => {
           if (currentPage > 1) {
             currentPage--;
+            goToPageInput.value = currentPage;
             fetchData(currentPage);
           }
         });
         container.appendChild(prevBtn);
+
+        // 显示"第11个按钮-最后一页"
+        if (totalPages > 10) {
+          const lastPageBtn = document.createElement('button');
+          lastPageBtn.className = `pagination-btn direction-btn ${currentPage === totalPages ? 'disabled' : ''}`;
+          lastPageBtn.textContent = `最后一页 (${totalPages})`;
+          lastPageBtn.style.fontSize = '10px';
+          lastPageBtn.addEventListener('click', () => {
+            currentPage = totalPages;
+            goToPageInput.value = currentPage;
+            fetchData(currentPage);
+          });
+          container.appendChild(lastPageBtn);
+        }
 
         let startPage = Math.max(1, currentPage - 5);
         let endPage = Math.min(totalPages, startPage + 9);
@@ -447,6 +745,7 @@
           pageBtn.textContent = i;
           pageBtn.addEventListener('click', () => {
             currentPage = i;
+            goToPageInput.value = currentPage;
             fetchData(currentPage);
           });
           container.appendChild(pageBtn);
@@ -466,6 +765,7 @@
         nextBtn.addEventListener('click', () => {
           if (currentPage < totalPages) {
             currentPage++;
+            goToPageInput.value = currentPage;
             fetchData(currentPage);
           }
         });
@@ -476,7 +776,8 @@
       async function fetchData(page = 1) {
         const dbName = document.getElementById('db_name').value.trim();
         const tbName = document.getElementById('tb_name').value.trim();
-        const search = document.getElementById('search').value.trim();
+        const search = savedSearch;
+        const searchCol = savedSearchColumn;
 
         if (!dbName || !tbName) {
           showError('请输入数据库名和表名');
@@ -492,15 +793,22 @@
         showTableBtn.textContent = '查询中...';
 
         try {
+          const formData = {
+            db_name: dbName,
+            tb_name: tbName,
+            page: page,
+            limit: itemsPerPage,
+            search: search
+          };
+
+          // 如果选择了具体列，则添加 searchColumn 参数
+          if (searchCol) {
+            formData.searchColumn = searchCol;
+          }
+
           const response = await fetch('/show_tb', {
             method: 'POST',
-            body: new URLSearchParams({
-              db_name: dbName,
-              tb_name: tbName,
-              page: page,
-              limit: itemsPerPage,
-              search: search
-            })
+            body: new URLSearchParams(formData)
           });
           const data = await response.json();
 
@@ -508,14 +816,18 @@
             throw new Error(data.error);
           }
 
-          downloadBtn.disabled = false;
           downloadBtn.dataset.dbName = dbName;
           downloadBtn.dataset.tbName = tbName;
 
+          currentPage = page;
+          goToPageInput.value = currentPage;
           renderTable(data, dbName, tbName);
 
         } catch (error) {
           downloadBtn.disabled = true;
+          newBtn.disabled = true;
+          deleteBtn.disabled = true;
+          modifyBtn.disabled = true;
           showError(error.message);
         } finally {
           loadingIndicator.classList.add('hidden');
@@ -523,6 +835,279 @@
           showTableBtn.textContent = '查看数据';
         }
       }
+
+      // 前往指定页码按钮点击事件
+      goToPageBtn.addEventListener('click', function () {
+        const page = parseInt(goToPageInput.value, 10);
+        if (page >= 1 && page <= totalPages) {
+          currentPage = page;
+          fetchData(currentPage);
+        } else {
+          showError('请输入有效的页码');
+        }
+      });
+
+      // 新建按钮点击事件
+      newBtn.addEventListener('click', function () {
+        const headers = Array.from(tableHeader.children).slice(2).map(th => th.textContent);
+        const popupInputs = document.getElementById('popup-inputs');
+        popupInputs.innerHTML = '';
+         popupSubmit.style.display = 'inline-block';
+        saveBtn.style.display = 'none';
+
+        headers.forEach(header => {
+          const label = document.createElement('label');
+          label.style.marginLeft = '40px';
+          label.textContent = header;
+          const input = document.createElement('input');
+          input.style.marginBottom = '10px';
+          input.style.marginLeft = '40px';
+          input.style.width = '200px';
+          input.type = 'text';
+          input.name = header;
+          popupInputs.appendChild(label);
+          popupInputs.appendChild(input);
+        });
+
+        popup.style.display = 'block';
+        popupOverlay.style.display = 'block';
+      });
+
+      // 弹窗取消按钮点击事件
+      popupCancel.addEventListener('click', function () {
+        popup.style.display = 'none';
+        popupOverlay.style.display = 'none';
+      });
+
+      // 在DOMContentLoaded事件处理函数中找到popupSubmit的事件监听
+      popupSubmit.addEventListener('click', function () {
+
+        const inputs = document.querySelectorAll('#popup-inputs input');
+        const data = {};
+        inputs.forEach(input => {
+          data[input.name] = input.value;
+        });
+
+        // 获取当前表信息
+        const dbName = downloadBtn.dataset.dbName;
+        const tbName = downloadBtn.dataset.tbName;
+
+        if (!dbName || !tbName) {
+          alert('请先查询数据');
+          return;
+        }
+
+        // 显示加载状态
+        popupSubmit.disabled = true;
+        popupSubmit.textContent = '提交中...';
+
+        // 发送数据到后端
+        fetch('/insert_data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            db_name: dbName,
+            tb_name: tbName,
+            data: data
+          })
+        })
+         .then(response => {
+            if (!response.ok) {
+              throw new Error('提交失败');
+            }
+            return response.json();
+          })
+         .then(result => {
+            if (result.success) {
+              alert('数据添加成功');
+              // 刷新表格数据
+              fetchData(currentPage);
+            } else {
+              throw new Error(result.message || '提交失败');
+            }
+          })
+         .catch(error => {
+            alert('错误: ' + error.message);
+          })
+         .finally(() => {
+            popupSubmit.disabled = false;
+            popupSubmit.textContent = '提交';
+            popup.style.display = 'none';
+            popupOverlay.style.display = 'none';
+          });
+      });
+
+    deleteBtn.addEventListener('click', function () {
+    const checkboxes = document.querySelectorAll('#tableBody input[type="checkbox"]:checked');
+    if (checkboxes.length === 0) {
+        alert('请选择要删除的行');
+        return;
+    }
+
+    const selectedIds = [];
+    checkboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const id = row.querySelector('.id-cell').textContent;
+        selectedIds.push(id);
+    });
+
+    console.log('所有选中的ID:', selectedIds);
+
+    const dbName = document.getElementById('db_name').value;
+    const tbName = document.getElementById('tb_name').value;
+    console.log(dbName,tbName)
+
+    fetch('/delete_data', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            db_name: dbName,
+            tb_name: tbName,
+            ids: selectedIds
+        })
+    })
+   .then(response => {
+        if (!response.ok) {
+          console.log('收到响应，状态码:', response.status);
+            throw new Error('删除失败');
+        }
+        return response.json();
+    })
+   .then(data => {
+        alert('数据删除成功');
+        // 处理删除成功的逻辑
+        console.log('删除成功:', data);
+        // 重新加载数据
+        fetchData();
+    })
+   .catch(error => {
+        // 显示错误信息
+        showError(error.message);
+    });
+});
+
+function showError(message) {
+    const errorMessage = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    errorMessage.classList.remove('hidden');
+    errorText.textContent = `错误: ${message || '获取数据失败'}`;
+}
+
+      // 修改按钮点击事件
+    // 修改按钮点击事件
+modifyBtn.addEventListener('click', function () {
+  popupSubmit.style.display = 'none';
+  saveBtn.style.display = 'inline-block';
+    const checkboxes = document.querySelectorAll('#tableBody input[type="checkbox"]:checked');
+    if (checkboxes.length === 0) {
+        alert('请选择要修改的行');
+        return;
+    }
+
+    if (checkboxes.length > 1) {
+        alert('一次只能修改一行数据');
+        return;
+    }
+
+    const row = checkboxes[0].closest('tr');
+    const cells = row.querySelectorAll('td');
+    const headers = Array.from(tableHeader.children).slice(2).map(th => th.textContent);
+    const popupInputs = document.getElementById('popup-inputs');
+    popupInputs.innerHTML = '';
+
+    headers.forEach((header, index) => {
+        const label = document.createElement('label');
+        label.style.marginLeft = '40px';
+        label.textContent = header;
+        const input = document.createElement('input');
+        input.style.marginBottom = '10px';
+        input.style.marginLeft = '40px';
+        input.style.width = '200px';
+        input.type = 'text';
+        input.name = header;
+        input.value = cells[index + 2].textContent;
+        popupInputs.appendChild(label);
+        popupInputs.appendChild(input);
+    });
+
+    popup.style.display = 'block';
+    popupOverlay.style.display = 'block';
+
+    // 保存按钮点击事件 - 使用命名函数以便后续移除
+    const saveHandler = function () {
+        const inputs = document.querySelectorAll('#popup-inputs input');
+        const data = {};
+        inputs.forEach(input => {
+            data[input.name] = input.value;
+        });
+
+        const dbName = downloadBtn.dataset.dbName;
+        const tbName = downloadBtn.dataset.tbName;
+
+        if (!dbName || !tbName) {
+            alert('请先查询数据');
+            return;
+        }
+
+        const idCell = row.querySelector('.id-cell');
+        const id = idCell.textContent; // 获取该行的 ID
+
+        // 显示加载状态
+        saveBtn.disabled = true;
+        saveBtn.textContent = '保存中...';
+
+        // 发送数据到后端
+        fetch('/modify_data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                db_name: dbName,
+                tb_name: tbName,
+                id: id, // 使用 ID 而不是 rowIndex
+                data: data
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('修改失败');
+            }
+            return response.json();
+        })
+        .then(result => {
+            if (result.success) {
+                alert('数据修改成功');
+                // 刷新表格数据
+                fetchData(currentPage);
+            } else {
+                throw new Error(result.message || '修改失败');
+            }
+        })
+        .catch(error => {
+            alert('错误: ' + error.message);
+        })
+        .finally(() => {
+            saveBtn.disabled = false;
+            saveBtn.textContent = '保存';
+            popup.style.display = 'none';
+            popupOverlay.style.display = 'none';
+            // 操作完成后移除事件监听器
+            saveBtn.removeEventListener('click', saveHandler);
+        });
+    };
+
+    // 先移除之前可能存在的事件监听器，避免重复绑定
+    saveBtn.removeEventListener('click', saveHandler);
+    // 添加新的事件监听器
+    saveBtn.addEventListener('click', saveHandler);
+});
+
+
     });
   </script>
 </body>

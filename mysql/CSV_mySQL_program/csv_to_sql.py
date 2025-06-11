@@ -165,17 +165,22 @@ class MySQLDatabase:
             if cursor:
                 cursor.close()
 
-    def execute_query(self, query):
-        """执行任意 SQL 查询"""
+    def execute_query(self, query, params=None):
+        """执行任意 SQL 查询，可带参数"""
         if not self.connection or not self.connection.is_connected():
             raise ValueError("未连接到数据库")
 
         cursor = self.connection.cursor()
         try:
-            cursor.execute(query)
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            self.connection.commit()  # 提交事务
             return True
         except Error as e:
             print(f"查询执行失败: {e}")
+            self.connection.rollback()  # 回滚事务
             return False
         finally:
             cursor.close()
@@ -301,12 +306,13 @@ class MySQLDatabase:
             print(f"获取表列表时发生错误: {e}")
             return []
 
-    def show_table_with_pagination_and_search(self, db_name, tb_name, page=1, limit=10, search=None):
+    def show_table_with_pagination_and_search(self, db_name, tb_name, page=1, limit=10, search=None, searchColumn=None):
         """
         带分页和搜索的查询方法，返回分页数据和总记录数
         :param page: 页码（从1开始）
         :param limit: 每页记录数
         :param search: 搜索关键词
+        :param searchColumn: 搜索列名
         :return: (table_data, total_rows)，失败返回 (None, 0)
         """
         if not self.connection or not self.connection.is_connected():
@@ -328,17 +334,24 @@ class MySQLDatabase:
             # 查询总记录数
             cursor = self.connection.cursor()
             if search:
-                # 获取表的列名
-                cursor.execute(f"SHOW COLUMNS FROM {tb_name_safe}")
-                columns = [col[0] for col in cursor.fetchall()]
+                if searchColumn:
+                    # 按指定列搜索
+                    search_conditions = f"`{searchColumn}` LIKE %s"
+                    search_value = f"%{search}%"
+                    count_query = f"SELECT COUNT(*) FROM {tb_name_safe} WHERE {search_conditions}"
+                    cursor.execute(count_query, [search_value])
+                else:
+                    # 获取表的列名
+                    cursor.execute(f"SHOW COLUMNS FROM {tb_name_safe}")
+                    columns = [col[0] for col in cursor.fetchall()]
 
-                # 构建搜索条件
-                search_conditions = " OR ".join([f"`{col}` LIKE %s" for col in columns])
-                search_value = f"%{search}%"
+                    # 构建搜索条件
+                    search_conditions = " OR ".join([f"`{col}` LIKE %s" for col in columns])
+                    search_value = f"%{search}%"
 
-                # 构建总记录数查询语句
-                count_query = f"SELECT COUNT(*) FROM {tb_name_safe} WHERE {search_conditions}"
-                cursor.execute(count_query, [search_value] * len(columns))
+                    # 构建总记录数查询语句
+                    count_query = f"SELECT COUNT(*) FROM {tb_name_safe} WHERE {search_conditions}"
+                    cursor.execute(count_query, [search_value] * len(columns))
             else:
                 # 没有搜索关键词，执行普通查询
                 count_query = f"SELECT COUNT(*) FROM {tb_name_safe}"
@@ -349,9 +362,24 @@ class MySQLDatabase:
             # 查询分页数据
             offset = (page - 1) * limit
             if search:
-                # 构建分页查询语句
-                query = f"SELECT * FROM {tb_name_safe} WHERE {search_conditions} LIMIT {limit} OFFSET {offset}"
-                cursor.execute(query, [search_value] * len(columns))
+                if searchColumn:
+                    # 按指定列搜索
+                    search_conditions = f"`{searchColumn}` LIKE %s"
+                    search_value = f"%{search}%"
+                    query = f"SELECT * FROM {tb_name_safe} WHERE {search_conditions} LIMIT {limit} OFFSET {offset}"
+                    cursor.execute(query, [search_value])
+                else:
+                    # 获取表的列名
+                    cursor.execute(f"SHOW COLUMNS FROM {tb_name_safe}")
+                    columns = [col[0] for col in cursor.fetchall()]
+
+                    # 构建搜索条件
+                    search_conditions = " OR ".join([f"`{col}` LIKE %s" for col in columns])
+                    search_value = f"%{search}%"
+
+                    # 构建分页查询语句
+                    query = f"SELECT * FROM {tb_name_safe} WHERE {search_conditions} LIMIT {limit} OFFSET {offset}"
+                    cursor.execute(query, [search_value] * len(columns))
             else:
                 # 没有搜索关键词，执行普通查询
                 query = f"SELECT * FROM {tb_name_safe} LIMIT {limit} OFFSET {offset}"
@@ -372,13 +400,13 @@ class MySQLDatabase:
             if cursor:
                 cursor.close()
 
-    def download_csv(self, db_name, tb_name, output_path, limit=10000):
+    def download_csv(self, db_name, tb_name, output_path, limit=200000):
         """
         从指定表导出数据到CSV文件（带表头）
         :param db_name: 数据库名
         :param tb_name: 表名
         :param output_path: CSV文件保存路径
-        :param limit: 最大导出行数（默认10000行）
+        :param limit: 最大导出行数（默认200000行）
         :return: 成功/失败
         """
         if not self.connection or not self.connection.is_connected():
@@ -593,6 +621,8 @@ def upload_file():
                             columns_definition = get_column_definition(headers, column_types)
 
                             db.use_database(db_name)
+
+                            columns_definition = "id INT AUTO_INCREMENT PRIMARY KEY," + columns_definition
                             db.create_table(tb_name, columns_definition)
 
                             # 上传 CSV 文件
@@ -773,6 +803,7 @@ def show_table():
             db_name = request.form.get('db_name').strip()
             tb_name = request.form.get('tb_name').strip()
             search = request.form.get('search').strip()
+            searchColumn = request.form.get('searchColumn', '').strip()
 
             # 获取分页参数（默认第1页，每页10条）
             page = int(request.form.get('page', 1))
@@ -786,7 +817,7 @@ def show_table():
                 return jsonify({"error": "数据库连接失败"}), 500
 
             # 调用带分页和搜索的查询方法
-            table_data, total_rows = db.show_table_with_pagination_and_search(db_name, tb_name, page, limit, search)
+            table_data, total_rows = db.show_table_with_pagination_and_search(db_name, tb_name, page, limit, search, searchColumn)
             if not table_data:
                 return jsonify({"error": "查询表数据失败：可能表不存在或无权限"}), 400
 
@@ -863,6 +894,143 @@ def download_table():
         if db and db.connection and db.connection.is_connected():
             db.disconnect()
 
+@app.route('/insert_data', methods=['POST'])
+def insert_data():
+    try:
+        data = request.get_json()
+        db_name = data.get('db_name')
+        tb_name = data.get('tb_name')
+        row_data = data.get('data')
+
+        if not db_name or not tb_name or not row_data:
+            return jsonify({"error": "请提供数据库名、表名和数据"}), 400
+
+        db = MySQLDatabase(**db_config)
+        if not db.connect():
+            return jsonify({"error": "数据库连接失败"}), 500
+
+        if not db.use_database(db_name):
+            return jsonify({"error": f"无法切换到数据库: {db_name}"}), 500
+
+        columns = ', '.join(row_data.keys())
+        values = ', '.join(['%s'] * len(row_data))
+        insert_query = f"INSERT INTO {tb_name} ({columns}) VALUES ({values})"
+        values_list = list(row_data.values())
+
+        cursor = db.connection.cursor()
+        cursor.execute(insert_query, values_list)
+        db.connection.commit()
+        cursor.close()
+        db.disconnect()
+
+        return jsonify({"success": True, "message": "数据添加成功"})
+
+    except Exception as e:
+        app.logger.error(f"插入数据失败: {str(e)}", exc_info=True)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route('/delete_data', methods=['POST'])
+def delete_data():
+    try:
+        # 创建数据库操作实例
+        db_creator = MySQLDatabase(**db_config)
+
+        # 连接到数据库服务器（不指定具体数据库）
+        if db_creator.connect():
+            # 从表单获取要删除的数据库和表名
+            data = request.get_json()
+            print('接收到的数据:', data)
+
+            db_name = data.get('db_name').strip()
+            tb_name = data.get('tb_name').strip()
+            ids = data.get('ids', [])  # 改为接收 ids 而不是 rows
+
+
+            # 验证数据库和表名
+            if not db_name:
+                raise ValueError("数据库名称不能为空")
+            if db_name.isdigit():
+                raise ValueError("数据库名不能为纯数字")
+            if not tb_name:
+                raise ValueError("表名称不能为空")
+            if tb_name.isdigit():
+                raise ValueError("表名不能为纯数字")
+
+            if not db_creator.database_exists(db_name):
+                raise ValueError("该数据库不存在")
+            if not db_creator.table_exists(db_name, tb_name):
+                raise ValueError("该表不存在")
+
+            # 切换到指定数据库
+            db_creator.use_database(db_name)
+
+            # 构建删除语句 - 直接使用前端提供的 ID
+            for id_value in ids:
+                print(1)
+                # 使用参数化查询避免SQL注入
+                delete_query = f"DELETE FROM `{tb_name}` WHERE id = %s"
+                print(2)
+                db_creator.execute_query(delete_query, (id_value,))
+                print(3)
+
+            db_creator.disconnect()  # 断开连接
+            return jsonify({"success": True, "message": "数据删除成功"})
+        else:
+            raise ValueError("无法连接到SQL服务器")
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@app.route('/modify_data', methods=['POST'])
+def modify_data():
+    try:
+        # 创建数据库操作实例
+        db_creator = MySQLDatabase(**db_config)
+
+        # 连接到数据库服务器（不指定具体数据库）
+        if db_creator.connect():
+            # 从表单获取要修改的数据库、表名、ID和数据
+            data = request.get_json()
+            db_name = data.get('db_name').strip()
+            tb_name = data.get('tb_name').strip()
+            id_value = data.get('id')  # 改为接收 id 而不是 row_index
+            new_data = data.get('data')
+
+            # 验证数据库和表名
+            if not db_name:
+                raise ValueError("数据库名称不能为空")
+            if db_name.isdigit():
+                raise ValueError("数据库名不能为纯数字")
+            if not tb_name:
+                raise ValueError("表名称不能为空")
+            if tb_name.isdigit():
+                raise ValueError("表名不能为纯数字")
+
+            if not db_creator.database_exists(db_name):
+                raise ValueError("该数据库不存在")
+            if not db_creator.table_exists(db_name, tb_name):
+                raise ValueError("该表不存在")
+
+            # 切换到指定数据库
+            db_creator.use_database(db_name)
+
+            # 构建更新语句 - 直接使用前端提供的 ID
+            set_clause = ", ".join([f"`{key}` = %s" for key in new_data.keys()])
+            values = list(new_data.values())
+            values.append(id_value)  # 将ID添加到参数列表末尾
+
+            update_query = f"UPDATE `{tb_name}` SET {set_clause} WHERE id = %s"
+            db_creator.execute_query(update_query, values)
+
+            db_creator.disconnect()  # 断开连接
+            return jsonify({"success": True, "message": "数据修改成功"})
+        else:
+            raise ValueError("无法连接到SQL服务器")
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', debug=True)  # 监听所有可用网络接口
